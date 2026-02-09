@@ -27,17 +27,16 @@ def collatz_hw_bitserial(n):
         bn[SIZE-1] = 0
     else:
         # odd: 3*n + 1 == (n << 1) + n + 1
-        # shift left by one bit
-        for i in range(SIZE-1, 0, -1):
-            bn[i] = bn[i-1]
-        bn[0] = 0
-
-        # add n + 1
-        carry = 1
+        carry = 1 # for the +1
+        previous_bit = 0 # used for the n << 1 part
         for i in range(SIZE):
-            s = bn[i] + ((n >> i) & 1) + carry
-            bn[i] = s & 1
-            carry = s >> 1
+            # store previous bit before overwriting it
+            current_bit = bn[i]
+
+            bn[i] = bn[i] ^ previous_bit ^ carry
+            carry = (current_bit & previous_bit) | (carry & (current_bit ^ previous_bit))
+
+            previous_bit = current_bit
 
     # convet back to integer
     result = 0
