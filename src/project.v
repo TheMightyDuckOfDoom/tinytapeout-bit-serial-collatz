@@ -22,7 +22,6 @@ module shift_register #(
     output wire [Width-1:0] parallel_data_o
 );
 
-  wire clk_en;
 
   reg  [Width-1:0] data_q, data_d;
 
@@ -38,25 +37,31 @@ module shift_register #(
     end
   end
 
-  assign clk_en = clk_i;
+  `ifdef CLOCK_GATING
+    // TODO: This does not work yet but should save area
+    wire clk_en;
+    wire comb_enable = shift_enable_i | parallel_load_i;
 
-  // Clock Gate to save area
-  // `ifndef RTL_TEST
-  //   sg13g2_lgcp_1 i_clk_gate (
-  //     .CLK ( clk_i    ),
-  //     .GATE( enable_i ),
-  //     .GCLK( clk_en   )
-  //   );
-  // `else
-  //   assign clk_en = enable_i ? clk_i : 1'b0;
-  // `endif
+    // Clock Gate to save area
+    sg13g2_lgcp_1 i_clk_gate (
+      .CLK ( clk_i       ),
+      .GATE( comb_enable ),
+      .GCLK( clk_en      )
+    );
 
-  always @(posedge clk_en or negedge rst_ni) begin
-    if (!rst_ni) data_q <= 0;
-    else if (shift_enable_i) data_q <= data_d;
-    else if (parallel_load_i) data_q <= parallel_data_i;
-    // else data_q <= data_d;
-  end
+    // Here we should use a scan flip-flop
+    always @(posedge clk_en or negedge rst_ni) begin
+      if (!rst_ni) data_q <= 0;
+      else if (shift_enable_i) data_q <= data_d;
+      else data_q <= parallel_data_i;
+    end
+  `else
+    always @(posedge clk_i or negedge rst_ni) begin
+      if (!rst_ni) data_q <= 0;
+      else if (shift_enable_i) data_q <= data_d;
+      else if (parallel_load_i) data_q <= parallel_data_i;
+    end
+  `endif
 
   assign data_o          = data_q[Width-1];
   assign parallel_data_o = data_q;
@@ -237,7 +242,10 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
     .parallel_data_i( 'd0  ),
 
     .data_o( sr_data_out ),
+
+    /* verilator lint_off PINCONNECTEMPTY */
     .parallel_data_o( /* unused */ )
+      /* verilator lint_on PINCONNECTEMPTY */
   );
 
   // Step counter shift register (for counting the number of steps taken)
