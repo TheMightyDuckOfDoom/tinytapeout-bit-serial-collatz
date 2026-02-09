@@ -26,11 +26,15 @@ module shift_register #(
   assign data_d[Width-1:1] = data_q[Width-2:0];
 
   // Clock Gate to save area
-  sg13g2_lgcp_1 i_clk_gate (
-    .CLK ( clk_i    ),
-    .GATE( enable_i ),
-    .GCLK( clk_en   )
-  );
+  `ifndef RTL_TEST
+    sg13g2_lgcp_1 i_clk_gate (
+      .CLK ( clk_i    ),
+      .GATE( enable_i ),
+      .GCLK( clk_en   )
+    );
+  `else
+    assign clk_en = enable_i ? clk_i : 1'b0;
+  `endif
 
   always @(posedge clk_en or negedge rst_ni) begin
     if (!rst_ni) data_q <= 0;
@@ -70,6 +74,6 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
   );
 
   // List all unused inputs to prevent warnings
-  wire _unused = &{ena, ui_in[7:3], uio_in, 1'b0};
+  wire _unused = &{ena, ui_in[7:2], uio_in, 1'b0};
 
 endmodule
