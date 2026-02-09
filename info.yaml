@@ -23,8 +23,8 @@ project:
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
 pinout:
   # Inputs
-  ui[0]: ""
-  ui[1]: ""
+  ui[0]: "Shift Register Enable"
+  ui[1]: "Shift Register Serial Input"
   ui[2]: ""
   ui[3]: ""
   ui[4]: ""
@@ -33,7 +33,7 @@ pinout:
   ui[7]: ""
 
   # Outputs
-  uo[0]: ""
+  uo[0]: "Shift Register Serial Output"
   uo[1]: ""
   uo[2]: ""
   uo[3]: ""

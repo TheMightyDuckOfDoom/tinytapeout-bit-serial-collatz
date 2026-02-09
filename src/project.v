@@ -36,6 +36,8 @@ module shift_register #(
     if (!rst_ni) data_q <= 0;
     else data_q <= data_d;
   end
+
+  assign data_o = data_q[Width-1];
 endmodule
 
 module tt_um_themightyduckofdoom_bitserial_collatz_checker (
@@ -50,6 +52,7 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
 );
 
   assign uo_out[7:1] = 0;
+
   assign uio_out = 0;
   assign uio_oe  = 0;
 
@@ -61,12 +64,12 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
     .clk_i ( clk   ),
     .rst_ni( rst_n ),
 
-    .enable_i( ui_in[0] ),
-    .data_i  ( ui_in[1] ),
-    .data_o  ( uo_out[0])
+    .enable_i( ui_in [0] ),
+    .data_i  ( ui_in [1] ),
+    .data_o  ( uo_out[0] )
   );
 
   // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, rst_n, 1'b0};
+  wire _unused = &{ena, ui_in[7:3], uio_in, 1'b0};
 
 endmodule
