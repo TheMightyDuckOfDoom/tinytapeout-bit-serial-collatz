@@ -1,11 +1,44 @@
 /*
- * Copyright (c) 2024 Your Name
+ * Copyright (c) 2026 Tobias Senti
  * SPDX-License-Identifier: Apache-2.0
  */
 
 `default_nettype none
 
-module tt_um_example (
+module shift_register #(
+    parameter Width = 8
+) (
+    input wire clk_i,
+    input wire rst_ni,
+
+    input  wire enable_i,
+    input  wire data_i,
+    output wire data_o
+);
+
+  wire clk_en;
+
+  wire [Width-1:0] data_d;
+  reg  [Width-1:0] data_q;
+
+  // Shift the register to the right and insert new data at the leftmost bit
+  assign data_d[0] = data_i;
+  assign data_d[Width-1:1] = data_q[Width-2:0];
+
+  // Clock Gate to save area
+  sg13g2_lgcp_1 i_clk_gate (
+    .CLK ( clk_i    ),
+    .GATE( enable_i ),
+    .GCLK( clk_en   )
+  );
+
+  always @(posedge clk_en or negedge rst_ni) begin
+    if (!rst_ni) data_q <= 0;
+    else data_q <= data_d;
+  end
+endmodule
+
+module tt_um_themightyduckofdoom_bitserial_collatz_checker (
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
     input  wire [7:0] uio_in,   // IOs: Input path
@@ -16,10 +49,22 @@ module tt_um_example (
     input  wire       rst_n     // reset_n - low to reset
 );
 
-  // All output pins must be assigned. If not used, assign to 0.
-  assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
+  assign uo_out[7:1] = 0;
   assign uio_out = 0;
   assign uio_oe  = 0;
+
+  localparam MainRegWidth = 144;
+
+  shift_register #(
+    .Width( MainRegWidth )
+  ) i_main_reg (
+    .clk_i ( clk   ),
+    .rst_ni( rst_n ),
+
+    .enable_i( ui_in[0] ),
+    .data_i  ( ui_in[1] ),
+    .data_o  ( uo_out[0])
+  );
 
   // List all unused inputs to prevent warnings
   wire _unused = &{ena, clk, rst_n, 1'b0};
