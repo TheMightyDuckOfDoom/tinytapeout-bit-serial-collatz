@@ -5,8 +5,10 @@
 
 `default_nettype none
 
+/// Shift register with parallel load and output
+// Used for the main register and the step counter
 module shift_register #(
-    parameter Width = 8
+    parameter integer Width = 8
 ) (
     input wire clk_i,
     input wire rst_ni,
@@ -68,23 +70,18 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
     input  wire       rst_n     // reset_n - low to reset
 );
 
-  assign uo_out[7:3] = 0;
-
-  assign uio_out = 0;
-  assign uio_oe  = 0;
-
   // Parameters for the design, affect resource usage and maximum input size
-  localparam MainRegWidth = 8;
-  localparam StepCounterWidth = 8;
+  localparam integer MainRegWidth = 144;
+  localparam integer StepCounterWidth = 10;
 
   // Bit position counter
-  localparam CounterWidth = $clog2(MainRegWidth) + 1;
+  localparam integer CounterWidth = $clog2(MainRegWidth) + 1;
 
   // State machine states
-  localparam StateIdle = 0;
-  localparam StateOdd = 1;
-  localparam StateCheck = 2; // Check and even state
-    
+  localparam reg [1:0] StateIdle = 0;
+  localparam reg [1:0] StateOdd = 1;
+  localparam reg [1:0] StateCheck = 2; // Check and even state
+
   // Finished flag
   reg finished_q, finished_d;
 
@@ -119,11 +116,12 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
     steps_d        = steps_q;
     one_count_d    = one_count_q;
     finished_d     = finished_q;
-    
+
     // Idle state: can shift data externally
     sr_data_in = ui_in[0];
     sr_enable  = ui_in[1];
 
+    // Keep step counter stable
     step_shift_enable  = 1'b0;
     step_parallel_load = 1'b0;
 
@@ -152,7 +150,7 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
     end
     // Check all bits and count the number of ones
     StateCheck: begin
-      if (bit_counter_q < MainRegWidth) begin
+      if (bit_counter_q < MainRegWidth[CounterWidth-1:0]) begin
         // Shift the main register to get the next bit
         sr_enable = 1'b1;
         sr_data_in = sr_data_out; // Shift in the current output bit to keep the value stable
@@ -181,7 +179,7 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
           if (sr_data_out) begin
             // Odd case -> go into odd state to perform 3n+1
             bit_counter_d = 'd0;
-            carry_d = 1'b1; // Start with carry for the +1 in 3n+1 
+            carry_d = 1'b1; // Start with carry for the +1 in 3n+1
             previous_bit_d = 1'b0; // Previous bit for the n << 1 part of 3n+1
 
             state_d = StateOdd;
@@ -199,12 +197,13 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
       end
     end
     StateOdd: begin
-      if (bit_counter_q < MainRegWidth) begin
+      if (bit_counter_q < MainRegWidth[CounterWidth-1:0]) begin
         // Shift the main register
         sr_enable = 1'b1;
 
         sr_data_in     = sr_data_out ^ carry_q ^ previous_bit_q;
-        carry_d        = (sr_data_out & previous_bit_q) | (carry_q & (sr_data_out ^ previous_bit_q));
+        carry_d        = (sr_data_out & previous_bit_q)
+          | (carry_q & (sr_data_out ^ previous_bit_q));
         previous_bit_d = sr_data_out;
 
         // Increment bit counter
@@ -216,6 +215,7 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
         one_count_d = 'd0;
       end
     end
+    default: state_d = StateIdle;
     endcase
   end
 
@@ -280,5 +280,9 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
 
   // List all unused inputs to prevent warnings
   wire _unused = &{ena, ui_in, uio_in, 1'b0};
+
+  assign uo_out[7:3] = 0;
+  assign uio_out = 0;
+  assign uio_oe  = 0;
 
 endmodule

@@ -5,8 +5,15 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
 
-MainRegWidth = 8
-StepCounterWidth = 8
+MainRegWidth = 0
+StepCounterWidth = 0
+with open("../src/project.v") as f:
+    project_code = f.read()
+    for line in project_code.splitlines():
+        if line.strip().startswith("localparam integer MainRegWidth"):
+            MainRegWidth = int(line.strip().split()[-1].rstrip(";"))
+        elif line.strip().startswith("localparam integer StepCounterWidth"):
+            StepCounterWidth = int(line.strip().split()[-1].rstrip(";"))
 
 async def write_number(dut, value):
     bv = [0] * MainRegWidth
@@ -47,15 +54,17 @@ async def start_computation(dut):
     dut.ui_in.value = 0
  
     finished = False
-    for i in range(1000):
+    for i in range(MainRegWidth * 2**StepCounterWidth * 10):
         await ClockCycles(dut.clk, 1)
         if (dut.uo_out.value.to_unsigned() & (1 << 2)) != 0:
             dut._log.info(f"Computation finished after {i+1} cycles")
             finished = True
             break
+        if i % 1000 == 999:
+            dut._log.info(f"Waiting for computation to finish... {i+1} cycles elapsed")
 
     if not finished:
-        dut._log.error("Computation did not finish within 1000 cycles")
+        dut._log.error("Computation did not finish within time limit")
 
     return finished
 
@@ -72,7 +81,9 @@ def collatz(n):
     print(f"Starting Collatz computation for n={n}")
     steps = 0
     while n != 1 and n != 0:
-        print(f"n={n}, steps={steps}")
+        print(f"n={n} {n:b}, steps={steps}")
+        assert len(f"{n:b}") <= MainRegWidth, f"n={n} exceeds maximum representable value with {MainRegWidth} bits, needs {len(f'{n:b}')} bits"
+        assert len(f"{steps:b}") <= StepCounterWidth, f"steps={steps} exceeds maximum representable value with {StepCounterWidth} bits, needs {len(f'{steps:b}')} bits"
         if n % 2 == 0:
             n = n // 2
         else:
@@ -83,11 +94,12 @@ def collatz(n):
     return steps
 
 @cocotb.test()
-async def test_project(dut):
+async def test_sweep(dut):
+    max = 1000
     dut._log.info("Start")
 
-    # Set the clock period to 10 us (100 KHz)
-    clock = Clock(dut.clk, 10, unit="us")
+    # Set the clock period to 50 MHz
+    clock = Clock(dut.clk, 20, unit="ns")
     cocotb.start_soon(clock.start())
 
     # Reset
@@ -102,8 +114,7 @@ async def test_project(dut):
     dut._log.info("Test project behavior")
     failures = {}
 
-    # TODO: Works up to 27, but 27 is wrong
-    max = 27
+    dut._log.info(f"Testing Collatz computation for numbers from 1 to {max-1}")
     for n in range(1, max):
         sw_steps = collatz(n)
         hw_steps = await run_number(dut, n)
@@ -115,8 +126,7 @@ async def test_project(dut):
             dut._log.info(f"Test completed for n={n}: expected {sw_steps} steps, got {hw_steps} steps")
 
     if failures:
-        for n, (sw_steps, hw_steps) in failures.items():
-            dut._log.error(f"Test failed for n={n}: expected {sw_steps} steps, got {hw_steps} steps")
-
         percent_works = 100 * (max - 1 - len(failures)) / (max - 1)
         dut._log.error(f"{len(failures)} out of {max - 1} tests failed ({percent_works:.2f}% success rate)")
+        for n, (sw_steps, hw_steps) in failures.items():
+            dut._log.error(f"Test failed for n={n}: expected {sw_steps} steps, got {hw_steps} steps")
