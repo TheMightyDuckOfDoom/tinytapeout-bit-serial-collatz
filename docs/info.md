@@ -9,7 +9,10 @@ You can also include images in this folder and reference them in the markdown. E
 
 ## How it works
 
-TODO: Architecture
+The design consists of three main components:
+- *Main Shift Register*: stores the current number that we iteration upon
+- *Step Counter Register*: stores the number of steps it took to reach 1 i.e. the orbit-length
+- *State Machine*: a quite beatifull state machine coordinating the entire thing
 
 ## How to test
 
@@ -17,4 +20,4 @@ TODO: Testing procedure
 
 ## External hardware
 
-List external hardware used in your project (e.g. PMOD, LED display, etc), if any
+Does not require any external hardware.
