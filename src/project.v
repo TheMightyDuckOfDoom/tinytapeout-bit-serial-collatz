@@ -34,6 +34,8 @@ module shift_register #(
     wire clk_en;
     wire comb_enable = shift_enable_i | parallel_load_i;
 
+    wire [Width-1:0] data_q_unbuff;
+
     // Clock Gate to save area
     sg13g2_lgcp_1 i_clk_gate (
       .CLK ( clk_i       ),
@@ -41,15 +43,27 @@ module shift_register #(
       .GCLK( clk_en      )
     );
 
-    // Here we should use a scan flip-flop
+    // Shift register with parallel load
     for (genvar i = 0; i < Width; i++) begin
       sg13g2_sdfrbpq_1 i_ff (
-        .D  ( parallel_data_i[i] ),
-        .SCD( data_d[i]          ),
-        .SCE( shift_enable_i     ),
-        .CLK( clk_en             ),
-        .Q  ( data_q[i]          )
+        .RESET_B( rst_ni             ),
+        .D      ( parallel_data_i[i] ),
+        .SCD    ( data_d[i]          ),
+        .SCE    ( shift_enable_i     ),
+        .CLK    ( clk_en             ),
+        .Q      ( data_q_unbuff[i]   )
       );
+
+      // Hold Buffer
+      if (i == Width-1) begin
+        // No buffer for output
+        assign data_q[i] = data_q_unbuff[i];
+      end else begin
+        sg13g2_dlygate4sd3_1 i_hold_buffer (
+          .A( data_q_unbuff[i] ),
+          .X( data_q[i]        )
+        );
+      end
     end
     // verilator lint_on MODMISSING
   `else
