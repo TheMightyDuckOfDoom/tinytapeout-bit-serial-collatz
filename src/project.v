@@ -29,7 +29,8 @@ module shift_register #(
   assign data_d[Width-1] = data_i;
   assign data_d[Width-2:0] = data_q[Width-1:1];
 
-  `ifndef DISABLE_CLOCK_GATING
+  // `ifndef DISABLE_CLOCK_GATING
+  `ifdef ENABLE_CLOCK_GATING
     // verilator lint_off MODMISSING
     wire clk_en;
     wire comb_enable = shift_enable_i | parallel_load_i;
