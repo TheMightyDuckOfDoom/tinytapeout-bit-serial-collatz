@@ -74,7 +74,7 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
   assign uio_oe  = 0;
 
   // Parameters for the design, affect resource usage and maximum input size
-  localparam MainRegWidth = 16;
+  localparam MainRegWidth = 8;
   localparam StepCounterWidth = 8;
 
   // Bit position counter
