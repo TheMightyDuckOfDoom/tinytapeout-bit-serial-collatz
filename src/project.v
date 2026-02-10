@@ -29,8 +29,8 @@ module shift_register #(
   assign data_d[Width-1] = data_i;
   assign data_d[Width-2:0] = data_q[Width-1:1];
 
-  `ifdef CLOCK_GATING
-    // TODO: This does not work yet but should save area
+  `ifndef DISABLE_CLOCK_GATING
+    // verilator lint_off MODMISSING
     wire clk_en;
     wire comb_enable = shift_enable_i | parallel_load_i;
 
@@ -42,11 +42,16 @@ module shift_register #(
     );
 
     // Here we should use a scan flip-flop
-    always @(posedge clk_en or negedge rst_ni) begin
-      if (!rst_ni) data_q <= 0;
-      else if (shift_enable_i) data_q <= data_d;
-      else data_q <= parallel_data_i;
+    for (genvar i = 0; i < Width; i++) begin
+      sg13g2_sdfrbpq_1 i_ff (
+        .D  ( parallel_data_i[i] ),
+        .SCD( data_d[i]          ),
+        .SCE( shift_enable_i     ),
+        .CLK( clk_en             ),
+        .Q  ( data_q[i]          )
+      );
     end
+    // verilator lint_on MODMISSING
   `else
     always @(posedge clk_i or negedge rst_ni) begin
       if (!rst_ni) data_q <= 0;
@@ -211,6 +216,11 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
         carry_d        = (sr_data_out & previous_bit_q)
           | (carry_q & (sr_data_out ^ previous_bit_q));
         previous_bit_d = sr_data_out;
+
+        // Check for overflow: if we have a carry out of the most significant bit, we have an overflow
+        if ((bit_counter_q == (MainRegWidth[CounterWidth-1:0] - 'd1)) && carry_d) begin
+          overflow_d = 1'b1; // sticky bit
+        end
 
         // Increment bit counter
         bit_counter_d = bit_counter_q + 'd1;
