@@ -65,7 +65,9 @@ for i in range(1000000):
     # i = 3012445987290400330380289851637892354190268 # fits into 144 bits
     # i = 9538163849286484684936098584142661875319637 # needs 145 bits
     # random 256 bit number
-    i = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    #i = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    # random 512 bit number
+    i = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     steps, step_counter_bits, n_bits = run_collatz(i, collatz_sw)
     print(f"{i}: {steps} steps, step counter bits needed: {step_counter_bits}, n bits needed: {n_bits}")
     max_step_bits = max(max_step_bits, step_counter_bits)

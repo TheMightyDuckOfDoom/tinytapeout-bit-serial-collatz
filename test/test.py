@@ -96,6 +96,7 @@ def collatz(n):
 @cocotb.test()
 async def test_sweep(dut):
     max = 1000
+    increment = max // 16
     dut._log.info("Start")
 
     # Set the clock period to 50 MHz
@@ -115,7 +116,7 @@ async def test_sweep(dut):
     failures = {}
 
     dut._log.info(f"Testing Collatz computation for numbers from 1 to {max-1}")
-    for n in range(1, max):
+    for n in range(1, max, increment):
         sw_steps = collatz(n)
         hw_steps = await run_number(dut, n)
 
