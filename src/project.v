@@ -85,6 +85,9 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
   // Finished flag
   reg finished_q, finished_d;
 
+  // Overflow flag
+  reg overflow_q, overflow_d;
+
   // Data into the main register
   reg sr_data_in, sr_data_out;
 
@@ -116,6 +119,7 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
     steps_d        = steps_q;
     one_count_d    = one_count_q;
     finished_d     = finished_q;
+    overflow_d     = overflow_q;
 
     // Idle state: can shift data externally
     sr_data_in = ui_in[0];
@@ -137,8 +141,9 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
         step_parallel_load = 1'b1;
         steps_d = 'd0;
 
-        // Reset finished flag
+        // Reset finished and overflow flag
         finished_d = 1'b0;
+        overflow_d = 1'b0;
 
         // Reset bit counter when starting a new number
         bit_counter_d = 'd0;
@@ -174,6 +179,7 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
           // Increment step counter
           step_parallel_load = 1'b1;
           steps_d            = steps_q + 'd1;
+          if (steps_d == '0) overflow_d = 1'b1; // Check for overflow
 
           // Continue processing:
           if (sr_data_out) begin
@@ -221,6 +227,7 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
 
   assign uo_out[0] = sr_data_out;
   assign uo_out[2] = finished_q;
+  assign uo_out[3] = overflow_q;
 
   // Main shift register to hold the current value of n
   shift_register #(
@@ -268,6 +275,7 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
       bit_counter_q  <= 'd0;
       one_count_q    <= 'd0;
       finished_q     <= 1'b0;
+      overflow_q     <= 1'b0;
     end else begin
       state_q        <= state_d;
       carry_q        <= carry_d;
@@ -275,13 +283,14 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
       bit_counter_q  <= bit_counter_d;
       one_count_q    <= one_count_d;
       finished_q     <= finished_d;
+      overflow_q     <= overflow_d;
     end
   end
 
   // List all unused inputs to prevent warnings
   wire _unused = &{ena, ui_in, uio_in, 1'b0};
 
-  assign uo_out[7:3] = 0;
+  assign uo_out[7:4] = 0;
   assign uio_out = 0;
   assign uio_oe  = 0;
 

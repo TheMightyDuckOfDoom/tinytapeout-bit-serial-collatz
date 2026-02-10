@@ -35,8 +35,8 @@ pinout:
   # Outputs
   uo[0]: "Main Register Serial Output"
   uo[1]: "Step Register Serial Output"
-  uo[2]: "Finished Signal"
-  uo[3]: ""
+  uo[2]: "Finished Flag"
+  uo[3]: "Overflow Flag"
   uo[4]: ""
   uo[5]: ""
   uo[6]: ""
