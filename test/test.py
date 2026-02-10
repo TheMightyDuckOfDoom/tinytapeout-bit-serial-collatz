@@ -99,8 +99,8 @@ async def test_sweep(dut):
     increment = max // 16
     dut._log.info("Start")
 
-    # Set the clock period to 50 MHz
-    clock = Clock(dut.clk, 20, unit="ns")
+    # Set the clock period to 142 MHz
+    clock = Clock(dut.clk, 7, unit="ns")
     cocotb.start_soon(clock.start())
 
     # Reset
@@ -136,8 +136,8 @@ async def test_sweep(dut):
 async def test_tt05_collatz(dut):
     dut._log.info("Start")
 
-    # Set the clock period to 50 MHz
-    clock = Clock(dut.clk, 20, unit="ns")
+    # Set the clock period to 142 MHz
+    clock = Clock(dut.clk, 7, unit="ns")
     cocotb.start_soon(clock.start())
 
     # Reset
