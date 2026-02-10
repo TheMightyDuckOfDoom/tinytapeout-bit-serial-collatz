@@ -20,11 +20,12 @@ module shift_register #(
     output wire data_o,
     output wire [Width-1:0] parallel_data_o
 );
-  reg  [Width-1:0] data_q, data_d;
+  wire [Width-1:0] data_d;
+  reg  [Width-1:0] data_q;
 
   // Shift the register to the right and insert new data at the leftmost bit
-  assign data_d[0] = data_i;
-  assign data_d[Width-1:1] = data_q[Width-2:0];
+  assign data_d[Width-1] = data_i;
+  assign data_d[Width-2:0] = data_q[Width-1:1];
 
   `ifdef CLOCK_GATING
     // TODO: This does not work yet but should save area
@@ -52,7 +53,7 @@ module shift_register #(
     end
   `endif
 
-  assign data_o          = data_q[Width-1];
+  assign data_o          = data_q[0];
   assign parallel_data_o = data_q;
 endmodule
 
@@ -72,9 +73,14 @@ module tt_um_themightyduckofdoom_bitserial_collatz_checker (
   assign uio_out = 0;
   assign uio_oe  = 0;
 
-  localparam MainRegWidth = 5;
-  localparam StepCounterWidth = 4;
-  localparam CounterWidth = $clog2(MainRegWidth);
+  // Parameters for the design, affect resource usage and maximum input size
+  localparam MainRegWidth = 16;
+  localparam StepCounterWidth = 8;
+
+  // Bit position counter
+  localparam CounterWidth = $clog2(MainRegWidth) + 1;
+
+  // State machine states
   localparam StateIdle = 0;
   localparam StateOdd = 1;
   localparam StateCheck = 2; // Check and even state
